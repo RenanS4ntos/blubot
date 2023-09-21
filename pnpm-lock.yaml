@@ -149,6 +149,9 @@ importers:
       '@use-gesture/react':
         specifier: ^10.2.27
         version: 10.2.27(react@18.2.0)
+      axios:
+        specifier: ^1.5.0
+        version: 1.5.0
       browser-image-compression:
         specifier: 2.0.2
         version: 2.0.2

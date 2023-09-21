@@ -22,11 +22,11 @@ import {
   WebhookOptions,
   Webhook,
 } from '@typebot.io/schemas'
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { executeWebhook } from '../queries/executeWebhookQuery'
 import { convertVariablesForTestToVariables } from '../helpers/convertVariablesForTestToVariables'
 import { getDeepKeys } from '../helpers/getDeepKeys'
-import { QueryParamsInputs, HeadersInputs } from './KeyValueInputs'
+import { HeadersInputs } from './KeyValueInputs'
 import { DataVariableInputs } from './ResponseMappingInputs'
 import { VariableForTestInputs } from './VariableForTestInputs'
 import { SwitchWithRelatedSettings } from '@/components/SwitchWithRelatedSettings'
@@ -34,6 +34,7 @@ import { HttpMethod } from '@typebot.io/schemas/features/blocks/integrations/web
 
 type Props = {
   blockId: string
+  body: string
   webhook: Webhook
   options: WebhookOptions
   onWebhookChange: (webhook: Webhook) => void
@@ -46,6 +47,7 @@ export const WebhookAdvancedConfigForm = ({
   options,
   onWebhookChange,
   onOptionsChange,
+  body,
 }: Props) => {
   const { typebot, save } = useTypebot()
   const [isTestResponseLoading, setIsTestResponseLoading] = useState(false)
@@ -53,16 +55,20 @@ export const WebhookAdvancedConfigForm = ({
   const [responseKeys, setResponseKeys] = useState<string[]>([])
   const { showToast } = useToast()
 
+  useEffect(() => {
+    const isCustomBody = true
+
+    onOptionsChange({ ...options, isCustomBody })
+    onWebhookChange({ ...webhook, body })
+  }, [onOptionsChange, onWebhookChange, options, webhook, body])
+
+  const updateBody = (body: string) => onWebhookChange({ ...webhook, body })
+
   const updateMethod = (method: HttpMethod) =>
     onWebhookChange({ ...webhook, method })
 
-  const updateQueryParams = (queryParams: KeyValue[]) =>
-    onWebhookChange({ ...webhook, queryParams })
-
   const updateHeaders = (headers: KeyValue[]) =>
     onWebhookChange({ ...webhook, headers })
-
-  const updateBody = (body: string) => onWebhookChange({ ...webhook, body })
 
   const updateVariablesForTest = (variablesForTest: VariableForTest[]) =>
     onOptionsChange({ ...options, variablesForTest })
@@ -97,9 +103,6 @@ export const WebhookAdvancedConfigForm = ({
     setIsTestResponseLoading(false)
   }
 
-  const updateIsExecutedOnClient = (isExecutedOnClient: boolean) =>
-    onOptionsChange({ ...options, isExecutedOnClient })
-
   const ResponseMappingInputs = useMemo(
     () =>
       function Component(props: TableListItemProps<ResponseVariableMapping>) {
@@ -115,40 +118,17 @@ export const WebhookAdvancedConfigForm = ({
         initialValue={options.isAdvancedConfig ?? true}
         onCheckChange={updateAdvancedConfig}
       >
-        <SwitchWithLabel
-          label="Execute on client"
-          moreInfoContent="If enabled, the webhook will be executed on the client. It means it will be executed in the browser of your visitor. Make sure to enable CORS and do not expose sensitive data."
-          initialValue={options.isExecutedOnClient ?? false}
-          onCheckChange={updateIsExecutedOnClient}
-        />
         <HStack justify="space-between">
           <Text>Method:</Text>
           <DropdownList
-            currentItem={webhook.method as HttpMethod}
+            currentItem={HttpMethod.POST}
             onItemSelect={updateMethod}
             items={Object.values(HttpMethod)}
+            isDisabled
           />
         </HStack>
         <Accordion allowMultiple>
           <AccordionItem>
-            <AccordionButton justifyContent="space-between">
-              Query params
-              <AccordionIcon />
-            </AccordionButton>
-            <AccordionPanel pt="4">
-              <TableList<KeyValue>
-                initialItems={webhook.queryParams}
-                onItemsChange={updateQueryParams}
-                Item={QueryParamsInputs}
-                addLabel="Add a param"
-              />
-            </AccordionPanel>
-          </AccordionItem>
-          <AccordionItem>
-            <AccordionButton justifyContent="space-between">
-              Headers
-              <AccordionIcon />
-            </AccordionButton>
             <AccordionPanel pt="4">
               <TableList<KeyValue>
                 initialItems={webhook.headers}

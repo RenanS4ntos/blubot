@@ -12,6 +12,7 @@ import {
   SessionState,
 } from '@typebot.io/schemas'
 import { ExecuteIntegrationResponse } from '../types'
+import { executeBlubotBlock } from '@/features/blocks/integrations/blubot/executeBlubotBlock'
 
 export const executeIntegration =
   (state: SessionState) =>
@@ -30,6 +31,8 @@ export const executeIntegration =
       case IntegrationBlockType.MAKE_COM:
       case IntegrationBlockType.PABBLY_CONNECT:
         return executeWebhookBlock(state, block)
+      case IntegrationBlockType.BLUBOT:
+        return executeBlubotBlock(state, block)
       case IntegrationBlockType.OPEN_AI:
         return executeOpenAIBlock(state, block)
       case IntegrationBlockType.PIXEL:

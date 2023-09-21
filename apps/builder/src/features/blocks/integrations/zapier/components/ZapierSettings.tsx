@@ -51,6 +51,7 @@ export const ZapierSettings = ({
           options={options}
           onWebhookChange={setLocalWebhook}
           onOptionsChange={onOptionsChange}
+          body=''
         />
       )}
     </Stack>

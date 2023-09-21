@@ -44,6 +44,7 @@ import { PictureChoiceNode } from '@/features/blocks/inputs/pictureChoice/compon
 import { PixelNodeBody } from '@/features/blocks/integrations/pixel/components/PixelNodeBody'
 import { useScopedI18n } from '@/locales'
 import { ZemanticAiNodeBody } from '@/features/blocks/integrations/zemanticAi/ZemanticAiNodeBody'
+import { BlubotNodeBody } from '@/features/blocks/integrations/blubot/components/BlubotNodeBody'
 
 type Props = {
   block: Block | StartBlock
@@ -185,6 +186,9 @@ export const BlockNodeContent = ({ block, indices }: Props): JSX.Element => {
     }
     case IntegrationBlockType.CHATWOOT: {
       return <ChatwootNodeBody block={block} />
+    }
+    case IntegrationBlockType.BLUBOT: {
+      return <BlubotNodeBody block={block} />
     }
     case IntegrationBlockType.OPEN_AI: {
       return (

@@ -49,6 +49,7 @@ import { jumpBlockSchema } from './logic/jump'
 import { pictureChoiceBlockSchema } from './inputs/pictureChoice'
 import { Item } from '../items'
 import { zemanticAiBlockSchema } from './integrations/zemanticAi'
+import { blubotBlockSchema } from './integrations/blubot'
 
 export type DraggableBlock =
   | BubbleBlock
@@ -118,6 +119,7 @@ export const blockSchema = z.discriminatedUnion('type', [
   waitBlockSchema,
   jumpBlockSchema,
   abTestBlockSchema,
+  blubotBlockSchema,
   chatwootBlockSchema,
   googleAnalyticsBlockSchema,
   googleSheetsBlockSchema,

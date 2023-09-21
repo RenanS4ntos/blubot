@@ -80,6 +80,8 @@ export const BlockLabel = ({ type }: Props): JSX.Element => {
       return <Text fontSize="sm">{scopedT('email.label')}</Text>
     case IntegrationBlockType.CHATWOOT:
       return <Text fontSize="sm">{scopedT('chatwoot.label')}</Text>
+    case IntegrationBlockType.BLUBOT:
+      return <Text fontSize="sm">{scopedT('blubot.label')}</Text>
     case IntegrationBlockType.OPEN_AI:
       return <Text fontSize="sm">{scopedT('openai.label')}</Text>
     case IntegrationBlockType.PIXEL:

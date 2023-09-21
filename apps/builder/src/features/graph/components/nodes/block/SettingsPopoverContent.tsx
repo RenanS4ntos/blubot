@@ -48,6 +48,7 @@ import { PictureChoiceSettings } from '@/features/blocks/inputs/pictureChoice/co
 import { SettingsHoverBar } from './SettingsHoverBar'
 import { PixelSettings } from '@/features/blocks/integrations/pixel/components/PixelSettings'
 import { ZemanticAiSettings } from '@/features/blocks/integrations/zemanticAi/ZemanticAiSettings'
+import { BlubotSettings } from '@/features/blocks/integrations/blubot/components/BlubotSettings'
 
 type Props = {
   block: BlockWithOptions
@@ -299,6 +300,14 @@ export const BlockSettings = ({
     case IntegrationBlockType.CHATWOOT: {
       return (
         <ChatwootSettings
+          options={block.options}
+          onOptionsChange={updateOptions}
+        />
+      )
+    }
+    case IntegrationBlockType.BLUBOT: {
+      return (
+        <BlubotSettings
           options={block.options}
           onOptionsChange={updateOptions}
         />

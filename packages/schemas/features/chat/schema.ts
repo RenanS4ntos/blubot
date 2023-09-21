@@ -21,6 +21,7 @@ import { chatCompletionMessageSchema } from '../blocks/integrations/openai'
 import { sessionStateSchema } from './sessionState'
 import { dynamicThemeSchema } from './shared'
 import { preprocessTypebot } from '../typebot/helpers/preprocessTypebot'
+import { executableBlubotSchema } from '../blocks/integrations/blubot'
 
 const chatSessionSchema = z.object({
   id: z.string(),
@@ -224,6 +225,11 @@ const clientSideActionSchema = z
       .or(
         z.object({
           webhookToExecute: executableWebhookSchema,
+        })
+      )
+      .or(
+        z.object({
+          blubotToExecute: executableBlubotSchema,
         })
       )
       .or(

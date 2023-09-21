@@ -1,7 +1,13 @@
 {
-  "i18n-ally.localesPaths": ["apps/builder/src/locales"],
-  "i18n-ally.enabledFrameworks": ["next-international"],
-  "i18n-ally.enabledParsers": ["ts"],
+  "i18n-ally.localesPaths": [
+    "apps/builder/src/locales"
+  ],
+  "i18n-ally.enabledFrameworks": [
+    "next-international"
+  ],
+  "i18n-ally.enabledParsers": [
+    "ts"
+  ],
   "i18n-ally.keystyle": "flat",
   "i18n-ally.displayLanguage": "en",
   "editor.codeActionsOnSave": {
@@ -21,5 +27,9 @@
   },
   "[prisma]": {
     "editor.defaultFormatter": "Prisma.prisma"
-  }
+  },
+  "cSpell.words": [
+    "blubot",
+    "Blubot"
+  ]
 }

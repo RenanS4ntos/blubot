@@ -50,6 +50,7 @@ export const MakeComSettings = ({
           options={options}
           onWebhookChange={setLocalWebhook}
           onOptionsChange={onOptionsChange}
+          body=''
         />
       )}
     </Stack>

@@ -1,9 +1,19 @@
-import React, { ChangeEvent, useEffect, useMemo, useState } from 'react'
-import { Select, Spinner, Stack } from '@chakra-ui/react'
-import { WebhookOptions, Webhook, WebhookBlock } from '@typebot.io/schemas'
+import {
+  HStack,
+  Select,
+  Spinner,
+  Stack,
+  Text,
+} from '@chakra-ui/react'
+import React, { ChangeEvent, useEffect, useState } from 'react'
+import { api } from '../api/axios'
+import {
+  Blubot,
+  BlubotOptions,
+} from '@typebot.io/schemas/features/blocks/integrations/blubot'
 import { TextInput } from '@/components/inputs'
-import { WebhookAdvancedConfigForm } from './WebhookAdvancedConfigForm'
-import { api } from '../../blubot/api/axios'
+import { DropdownList } from '@/components/DropdownList'
+import { HttpMethod } from '@typebot.io/schemas/features/blocks/integrations/webhook/enums'
 
 interface Team {
   id: string
@@ -21,22 +31,19 @@ interface Attendants {
   teamId: string
 }
 
-type Props = {
-  block: WebhookBlock
-  onOptionsChange: (options: WebhookOptions) => void
+type BlubotSettingsProps = {
+  options: BlubotOptions
+  onOptionsChange: (options: BlubotOptions) => void
 }
 
-export const WebhookSettings = ({
-  block: { id: blockId, options },
+export const BlubotSettings = ({
+  options,
   onOptionsChange,
-}: Props) => {
+}: BlubotSettingsProps) => {
   const defaultURL = 'https://blubot-api.onrender.com/service'
-  const setLocalWebhook = async (newLocalWebhook: Webhook) => {
-    newLocalWebhook.url = defaultURL
+  const blubot = options.blubot as Blubot
+  const body = blubot.body
 
-    onOptionsChange({ ...options, webhook: newLocalWebhook })
-    return
-  }
   const [loading, setLoading] = useState(true)
   const [teams, setTeams] = useState<Team[]>([])
   const [forwardings, setForwardings] = useState<Forwarding[]>([])
@@ -44,23 +51,6 @@ export const WebhookSettings = ({
   const [selectedTeam, setSelectedTeam] = useState<string | null>(null)
   const [selectedForwarding, setSelectedForwarding] =
     useState<Forwarding | null>(null)
-  const [selectedAttendant, setSelectedAttendant] = useState<string | null>(
-    null
-  )
-
-  const body = useMemo(() => {
-    if (!selectedAttendant) {
-      return {
-        teamId: selectedTeam ? selectedTeam : '',
-        forwardingId: selectedForwarding ? selectedForwarding.id : '',
-      }
-    }
-    return {
-      teamId: selectedTeam ? selectedTeam : '',
-      forwardingId: selectedForwarding ? selectedForwarding.id : '',
-      attendantId: selectedAttendant,
-    }
-  }, [selectedAttendant, selectedForwarding, selectedTeam])
 
   async function loadData() {
     await api.get('/teams').then((response) => setTeams(response.data))
@@ -92,6 +82,18 @@ export const WebhookSettings = ({
 
   function handleChangeTeam(event: ChangeEvent<HTMLSelectElement>) {
     const team = event.currentTarget.value
+    body.teamId = team
+
+    onOptionsChange({
+      ...options,
+      blubot: {
+        ...blubot,
+        body: {
+          ...body,
+          teamId: team,
+        },
+      },
+    })
 
     setSelectedTeam(team)
   }
@@ -102,28 +104,64 @@ export const WebhookSettings = ({
 
     if (forwardingSelected) {
       setSelectedForwarding(forwardingSelected)
+      onOptionsChange({
+        ...options,
+        blubot: {
+          ...blubot,
+          body: {
+            ...body,
+            forwardingId: forwardingSelected.id,
+          },
+        },
+      })
     }
   }
 
   function handleChangeAttendant(event: ChangeEvent<HTMLSelectElement>) {
     const attendant = event.currentTarget.value
-    setSelectedAttendant(attendant)
+
+    onOptionsChange({
+      ...options,
+      blubot: {
+        ...blubot,
+        body: {
+          ...body,
+          attendantId: attendant,
+        },
+      },
+    })
   }
+
+  const updateMethod = (method: HttpMethod) =>
+  onOptionsChange({ ...options,  blubot: {
+    ...blubot,
+    method
+  }})
 
   if (loading) return <Spinner />
 
   return (
     <Stack spacing={4}>
       <TextInput
-        placeholder="Paste webhook URL..."
+        placeholder="Paste Blubot URL..."
         defaultValue={defaultURL}
         isDisabled={true}
       />
+      <HStack justify="space-between">
+          <Text>Method:</Text>
+          <DropdownList
+            currentItem={HttpMethod.POST}
+            onItemSelect={updateMethod}
+            items={Object.values(HttpMethod)}
+            isDisabled
+          />
+        </HStack>
       <Select
         isRequired
         placeholder={loading ? 'Carregando equipes...' : 'Equipe...'}
         variant={'filed'}
         onChange={handleChangeTeam}
+        defaultValue={options.blubot?.body.teamId}
       >
         {teams.map((team) => {
           return (
@@ -142,6 +180,7 @@ export const WebhookSettings = ({
         }
         variant={'filed'}
         onChange={handleChangeForwarding}
+        defaultValue={options.blubot?.body.forwardingId}
       >
         {forwardings.map((forwarding) => {
           return (
@@ -158,6 +197,7 @@ export const WebhookSettings = ({
             placeholder="Atendente..."
             variant={'filed'}
             onChange={handleChangeAttendant}
+            defaultValue={options.blubot?.body.attendantId}
           >
             {attendants.map((attendant) => {
               return (
@@ -168,14 +208,6 @@ export const WebhookSettings = ({
             })}
           </Select>
         )}
-      <WebhookAdvancedConfigForm
-        blockId={blockId}
-        webhook={options.webhook as Webhook}
-        options={options}
-        onWebhookChange={setLocalWebhook}
-        onOptionsChange={onOptionsChange}
-        body={JSON.stringify(body)}
-      />
     </Stack>
   )
 }

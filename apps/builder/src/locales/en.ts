@@ -245,6 +245,7 @@ export default {
   'editor.sidebarBlock.makecom.label': 'Make.com',
   'editor.sidebarBlock.pabbly.label': 'Pabbly',
   'editor.sidebarBlock.chatwoot.label': 'Chatwoot',
+  'editor.sidebarBlock.blubot.label': 'Blubot',
   'editor.sidebarBlock.openai.label': 'OpenAI',
   'editor.sidebarBlock.pixel.label': 'Pixel',
   'editor.sidebarBlock.zemanticAi.label': 'Zemantic AI',

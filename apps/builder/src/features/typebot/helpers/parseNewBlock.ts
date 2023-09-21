@@ -47,6 +47,7 @@ import {
   zemanticAiDefaultOptions,
 } from '@typebot.io/schemas'
 import { defaultPictureChoiceOptions } from '@typebot.io/schemas/features/blocks/inputs/pictureChoice'
+import { defaultBlubotOptions } from '@typebot.io/schemas/features/blocks/integrations/blubot'
 
 const parseDefaultItems = (
   type: BlockWithItems['type'],
@@ -140,6 +141,8 @@ const parseDefaultBlockOptions = (type: BlockWithOptionsType): BlockOptions => {
       return defaultSendEmailOptions
     case IntegrationBlockType.CHATWOOT:
       return defaultChatwootOptions
+    case IntegrationBlockType.BLUBOT:
+      return defaultBlubotOptions(createId())
     case IntegrationBlockType.OPEN_AI:
       return {}
     case IntegrationBlockType.PIXEL:

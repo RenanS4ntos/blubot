@@ -1,28 +1,26 @@
+import { byId } from './../../../../../../../packages/lib/utils'
 import { ExecuteIntegrationResponse } from '@/features/chat/types'
 import { parseVariables } from '@/features/variables/parseVariables'
 import { updateVariables } from '@/features/variables/updateVariables'
-import { byId } from '@typebot.io/lib'
-import {
-  MakeComBlock,
-  PabblyConnectBlock,
-  ReplyLog,
-  VariableWithUnknowValue,
-  WebhookBlock,
-  ZapierBlock,
-} from '@typebot.io/schemas'
+import { ReplyLog, VariableWithUnknowValue } from '@typebot.io/schemas'
+import { BlubotBlock } from '@typebot.io/schemas/features/blocks/integrations/blubot'
 import { SessionState } from '@typebot.io/schemas/features/chat/sessionState'
 
-type Props = {
-  state: SessionState
-  block: WebhookBlock | ZapierBlock | MakeComBlock | PabblyConnectBlock 
-  logs?: ReplyLog[]
-  response: {
-    statusCode: number
-    data?: unknown
+interface response {
+  statusCode: number
+  data?: {
+    protocol: string
   }
 }
 
-export const resumeWebhookExecution = ({
+type Props = {
+  state: SessionState
+  block: BlubotBlock
+  logs?: ReplyLog[]
+  response: response
+}
+
+export const resumeBlubotExecution = ({
   state,
   block,
   logs = [],
@@ -66,6 +64,7 @@ export const resumeWebhookExecution = ({
       return newVariables
     }
   }, [])
+
   if (newVariables.length > 0) {
     const newSessionState = updateVariables(state)(newVariables)
     return {

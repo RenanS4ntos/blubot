@@ -12,10 +12,10 @@ export const BlubotNodeBody = ({ block: { options } }: Props) => {
 
   return (
     <Stack w="full">
-      <Text noOfLines={2} pr="6" color="gray.500">
+      <Text noOfLines={2} pr="6">
         Atendimento humano...
       </Text>
-      {options?.responseVariableMapping
+      {options.responseVariableMapping
         .filter((mapping) => mapping.variableId)
         .map((mapping) => (
           <SetVariableLabel

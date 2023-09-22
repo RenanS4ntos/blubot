@@ -1,20 +1,30 @@
-import { SessionState, ReplyLog } from '@typebot.io/schemas'
+import { SessionState, ReplyLog, AnswerInSessionState, Variable } from '@typebot.io/schemas'
 
 import { omit } from '@typebot.io/lib'
-import got, { HTTPError, OptionsInit } from 'got'
+import got, { HTTPError, Method, OptionsInit } from 'got'
 import { ExecuteIntegrationResponse } from '@/features/chat/types'
 import {
+  Blubot,
   BlubotBlock,
-  BlubotOptions,
+  ExecutableBlubot,
 } from '@typebot.io/schemas/features/blocks/integrations/blubot'
+import { HttpMethod } from '@typebot.io/schemas/features/blocks/integrations/webhook/enums'
+import { parseVariables } from '@/features/variables/parseVariables'
+import { getDefinedVariables, parseAnswers } from '@typebot.io/lib/results'
 import { resumeBlubotExecution } from './resumeBlubotExecution'
+// import prisma from '@/lib/prisma'
 
 // passar teamId, forwardingId caso houver attendantId
 // retornar o protocolo de atendimento
 
+type ParsedBlubot = ExecutableBlubot & {
+  isJson: boolean
+}
+
 type BlubotResponse = {
   statusCode: number
   data?: {
+    message?: string
     protocol: string
   }
 }
@@ -23,126 +33,112 @@ export const executeBlubotBlock = async (
   state: SessionState,
   block: BlubotBlock
 ): Promise<ExecuteIntegrationResponse> => {
-  const { options } = block
-
-  // const preparedWebhook = prepareWebhookAttributes(webhook, block.options)
-  // const parsedWebhook = await parseWebhookAttributes(
-  //   state,
-  //   state.typebotsQueue[0].answers
-  // )(preparedWebhook)
-  // if (!parsedWebhook) {
+  const logs: ReplyLog[] = []
+  const blubot = {
+    id: "blubot1",
+    url: "https://blubot-api.onrender.com/service",
+    method: HttpMethod.POST,
+    body: {
+      teamId: "c0e82a8e-9c68-4fcb-a584-74314d8901b1",
+      forwardingId: "bff47419-de83-498b-94e6-37a5282b1ccf",
+      
+        // attendantId?: undefined
+    }
+}
+  //   block.options.blubot ??
+  //   ((await prisma.blubot.findUnique({
+  //     where: { id: block.blubotId },
+  //   })) as Blubot | null)
+  // if (!blubot) {
   //   logs.push({
   //     status: 'error',
-  //     description: `Couldn't parse webhook attributes`,
+  //     description: `Couldn't find blubot with id ${block.blubotId}`,
   //   })
   //   return { outgoingEdgeId: block.outgoingEdgeId, logs }
   // }
-  // if (block.options.isExecutedOnClient && !state.whatsApp)
-  //   return {
-  //     outgoingEdgeId: block.outgoingEdgeId,
-  //     clientSideActions: [
-  //       {
-  //         webhookToExecute: parsedWebhook,
-  //         expectsDedicatedReply: true,
-  //       },
-  //     ],
-  //   }
-
-  const { response: webhookResponse, logs: executeWebhookLogs } =
-    await executeWebhook(options)
+  const preparedBlubot = prepareBlubotAttributes(blubot)
+  const parsedBlubot = await parseBlubotAttributes(
+    state,
+    state.typebotsQueue[0].answers
+  )(preparedBlubot)
+  if (!parsedBlubot) {
+    logs.push({
+      status: 'error',
+      description: `Couldn't parse blubot attributes`,
+    })
+    return { outgoingEdgeId: block.outgoingEdgeId, logs }
+  }
+  const { response: blubotResponse, logs: executeBlubotLogs } =
+    await executeBlubot(parsedBlubot)
   return resumeBlubotExecution({
     state,
     block,
-    logs: executeWebhookLogs,
-    response: webhookResponse,
+    logs: executeBlubotLogs,
+    response: blubotResponse,
   })
 }
 
-// const prepareWebhookAttributes = (
-//   webhook: Webhook,
-//   options: WebhookOptions
-// ): Webhook => {
-//   if (options.isAdvancedConfig === false) {
-//     return { ...webhook, body: '{{state}}', ...defaultWebhookAttributes }
-//   } else if (options.isCustomBody === false) {
-//     return { ...webhook, body: '{{state}}' }
-//   }
-//   return webhook
-// }
+const prepareBlubotAttributes = (
+  blubot: Blubot,
+): Blubot => {
+  return blubot
+}
 
-// const checkIfBodyIsAVariable = (body: string) => /^{{.+}}$/.test(body)
+const checkIfBodyIsAVariable = (body: string) => /^{{.+}}$/.test(body)
 
-// const parseWebhookAttributes =
-//   (state: SessionState, answers: AnswerInSessionState[]) =>
-//   async (webhook: Webhook): Promise<ParsedWebhook | undefined> => {
-//     if (!webhook.url || !webhook.method) return
-//     const { typebot } = state.typebotsQueue[0]
-//     const basicAuth: { username?: string; password?: string } = {}
-//     const basicAuthHeaderIdx = webhook.headers.findIndex(
-//       (h) =>
-//         h.key?.toLowerCase() === 'authorization' &&
-//         h.value?.toLowerCase()?.includes('basic')
-//     )
-//     const isUsernamePasswordBasicAuth =
-//       basicAuthHeaderIdx !== -1 &&
-//       webhook.headers[basicAuthHeaderIdx].value?.includes(':')
-//     if (isUsernamePasswordBasicAuth) {
-//       const [username, password] =
-//         webhook.headers[basicAuthHeaderIdx].value?.slice(6).split(':') ?? []
-//       basicAuth.username = username
-//       basicAuth.password = password
-//       webhook.headers.splice(basicAuthHeaderIdx, 1)
-//     }
-//     const headers = convertKeyValueTableToObject(
-//       webhook.headers,
-//       typebot.variables
-//     ) as ExecutableWebhook['headers'] | undefined
-//     const queryParams = stringify(
-//       convertKeyValueTableToObject(webhook.queryParams, typebot.variables)
-//     )
-//     const bodyContent = await getBodyContent({
-//       body: webhook.body,
-//       answers,
-//       variables: typebot.variables,
-//     })
-//     const { data: body, isJson } =
-//       bodyContent && webhook.method !== HttpMethod.GET
-//         ? safeJsonParse(
-//             parseVariables(typebot.variables, {
-//               isInsideJson: !checkIfBodyIsAVariable(bodyContent),
-//             })(bodyContent)
-//           )
-//         : { data: undefined, isJson: false }
+const parseBlubotAttributes =
+  (state: SessionState, answers: AnswerInSessionState[]) =>
+  async (blubot: Blubot): Promise<ParsedBlubot | undefined> => {
+    if (!blubot.url || !blubot.method) return
+    const { typebot } = state.typebotsQueue[0]
+    
+    const bodyContent = await getBodyContent({
+      body: JSON.stringify(blubot.body),
+      answers,
+      variables: typebot.variables,
+    })
+    const { data: body, isJson } =
+      bodyContent && blubot.method !== HttpMethod.GET
+        ? safeJsonParse(
+            parseVariables(typebot.variables, {
+              isInsideJson: !checkIfBodyIsAVariable(bodyContent),
+            })(bodyContent)
+          )
+        : { data: undefined, isJson: false }
 
-//     return {
-//       url: parseVariables(typebot.variables)(
-//         webhook.url + (queryParams !== '' ? `?${queryParams}` : '')
-//       ),
-//       basicAuth,
-//       method: webhook.method,
-//       headers,
-//       body,
-//       isJson,
-//     }
-//   }
+    return {
+      url: parseVariables(typebot.variables)(
+        blubot.url
+      ),
+      method: blubot.method,
+      body,
+      isJson,
+    }
+  }
 
-export const executeWebhook = async (
-  body: BlubotOptions
+export const executeBlubot = async (
+  blubot: ParsedBlubot
 ): Promise<{ response: BlubotResponse; logs?: ReplyLog[] }> => {
   const logs: ReplyLog[] = []
-  const url = 'https://blubot-api.onrender.com/service'
+  const {  url, method,  body, isJson } = blubot
+  const contentType = 'application/json'
 
   const request = {
     url,
-    method: 'POST',
-    json: 'application/json',
-    body: JSON.stringify(body),
+    method: method as Method,
+    json:
+      !contentType?.includes('x-www-form-urlencoded') && body && isJson
+        ? body
+        : undefined,
+    form:
+      contentType?.includes('x-www-form-urlencoded') && body ? body : undefined,
+    body: body && !isJson ? (body as string) : undefined,
   } satisfies OptionsInit
   try {
     const response = await got(request.url, omit(request, 'url'))
     logs.push({
       status: 'success',
-      description: `Webhook successfuly executed.`,
+      description: `Blubot successfuly executed.`,
       details: {
         statusCode: response.statusCode,
         request,
@@ -164,7 +160,7 @@ export const executeWebhook = async (
       }
       logs.push({
         status: 'error',
-        description: `Webhook returned an error.`,
+        description: `blubot returned an error.`,
         details: {
           statusCode: error.response.statusCode,
           request,
@@ -175,20 +171,40 @@ export const executeWebhook = async (
     }
     const response = {
       statusCode: 500,
-      data: { protocol: '' },
+      data: { message: `Error from Typebot server: ${error}`, protocol: "" },
     }
+
     console.error(error)
     logs.push({
       status: 'error',
-      description: `Blubot failed to execute.`,
+      description: `blubot failed to execute.`,
       details: {
         request,
         response,
       },
     })
-
     return { response, logs }
   }
+}
+
+const getBodyContent = async ({
+  body,
+  answers,
+  variables,
+}: {
+  body?: string | null
+  answers: AnswerInSessionState[]
+  variables: Variable[]
+}): Promise<string | undefined> => {
+  if (!body) return
+  return body === '{{state}}'
+    ? JSON.stringify(
+        parseAnswers({
+          answers,
+          variables: getDefinedVariables(variables),
+        })
+      )
+    : body
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

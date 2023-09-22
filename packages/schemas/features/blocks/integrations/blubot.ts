@@ -4,6 +4,7 @@ import { IntegrationBlockType } from './enums'
 import { HttpMethod } from './webhook/enums'
 
 export interface BlubotResponseType {
+  message?: string
   protocol: string
 }
 

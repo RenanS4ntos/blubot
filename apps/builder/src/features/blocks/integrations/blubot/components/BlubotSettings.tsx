@@ -1,19 +1,27 @@
 import {
+  Accordion,
+  AccordionItem,
+  AccordionButton,
+  AccordionIcon,
+  AccordionPanel,
   HStack,
   Select,
   Spinner,
   Stack,
   Text,
 } from '@chakra-ui/react'
-import React, { ChangeEvent, useEffect, useState } from 'react'
+import React, { ChangeEvent, useEffect, useMemo, useState } from 'react'
 import { api } from '../api/axios'
 import {
   Blubot,
   BlubotOptions,
+  ResponseVariableMapping,
 } from '@typebot.io/schemas/features/blocks/integrations/blubot'
 import { TextInput } from '@/components/inputs'
 import { DropdownList } from '@/components/DropdownList'
 import { HttpMethod } from '@typebot.io/schemas/features/blocks/integrations/webhook/enums'
+import { TableList, TableListItemProps } from '@/components/TableList'
+import { DataVariableInputs } from './ResponseMappingInputs'
 
 interface Team {
   id: string
@@ -43,7 +51,7 @@ export const BlubotSettings = ({
   const defaultURL = 'https://blubot-api.onrender.com/service'
   const blubot = options.blubot as Blubot
   const body = blubot.body
-
+  const [responseKeys] = useState<string[]>(['data.protocol'])
   const [loading, setLoading] = useState(true)
   const [teams, setTeams] = useState<Team[]>([])
   const [forwardings, setForwardings] = useState<Forwarding[]>([])
@@ -53,6 +61,11 @@ export const BlubotSettings = ({
     useState<Forwarding | null>(null)
 
   async function loadData() {
+    if (options.blubot?.body) {
+      const { teamId, forwardingId } = options.blubot.body
+      setSelectedTeam(teamId)
+      setSelectedForwarding({ description: '', id: forwardingId })
+    }
     await api.get('/teams').then((response) => setTeams(response.data))
     await api
       .get('/forwardings')
@@ -132,11 +145,26 @@ export const BlubotSettings = ({
     })
   }
 
+  const ResponseMappingInputs = useMemo(
+    () =>
+      function Component(props: TableListItemProps<ResponseVariableMapping>) {
+        return <DataVariableInputs {...props} dataItems={responseKeys} />
+      },
+    [responseKeys]
+  )
+
+  const updateResponseVariableMapping = (
+    responseVariableMapping: ResponseVariableMapping[]
+  ) => onOptionsChange({ ...options, responseVariableMapping })
+
   const updateMethod = (method: HttpMethod) =>
-  onOptionsChange({ ...options,  blubot: {
-    ...blubot,
-    method
-  }})
+    onOptionsChange({
+      ...options,
+      blubot: {
+        ...blubot,
+        method,
+      },
+    })
 
   if (loading) return <Spinner />
 
@@ -148,14 +176,14 @@ export const BlubotSettings = ({
         isDisabled={true}
       />
       <HStack justify="space-between">
-          <Text>Method:</Text>
-          <DropdownList
-            currentItem={HttpMethod.POST}
-            onItemSelect={updateMethod}
-            items={Object.values(HttpMethod)}
-            isDisabled
-          />
-        </HStack>
+        <Text>Method:</Text>
+        <DropdownList
+          currentItem={HttpMethod.POST}
+          onItemSelect={updateMethod}
+          items={Object.values(HttpMethod)}
+          isDisabled
+        />
+      </HStack>
       <Select
         isRequired
         placeholder={loading ? 'Carregando equipes...' : 'Equipe...'}
@@ -208,6 +236,23 @@ export const BlubotSettings = ({
             })}
           </Select>
         )}
+
+      <Accordion allowMultiple>
+        <AccordionItem>
+          <AccordionButton justifyContent="space-between">
+            Save in variables
+            <AccordionIcon />
+          </AccordionButton>
+          <AccordionPanel pt="4">
+            <TableList<ResponseVariableMapping>
+              initialItems={options.responseVariableMapping}
+              onItemsChange={updateResponseVariableMapping}
+              Item={ResponseMappingInputs}
+              addLabel="Add an entry"
+            />
+          </AccordionPanel>
+        </AccordionItem>
+      </Accordion>
     </Stack>
   )
 }

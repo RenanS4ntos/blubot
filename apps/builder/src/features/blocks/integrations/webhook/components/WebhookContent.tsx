@@ -10,7 +10,7 @@ type Props = {
 export const WebhookContent = ({ block: { options } }: Props) => {
   const { typebot } = useTypebot()
   const webhook = options.webhook
-
+  console.log(options.responseVariableMapping)
   if (!webhook?.url) return <Text color="gray.500">Configure...</Text>
   return (
     <Stack w="full">

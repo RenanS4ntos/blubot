@@ -37,12 +37,12 @@ export const resumeBlubotExecution = ({
       isError
         ? {
             status: 'error',
-            description: `Webhook returned error`,
+            description: `Blubot returned error`,
             details: response.data,
           }
         : {
             status: 'success',
-            description: `Webhook executed successfully!`,
+            description: `Blubot executed successfully!`,
             details: response.data,
           }
     )

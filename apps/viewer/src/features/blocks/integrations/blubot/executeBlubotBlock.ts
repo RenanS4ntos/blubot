@@ -1,4 +1,9 @@
-import { SessionState, ReplyLog, AnswerInSessionState, Variable } from '@typebot.io/schemas'
+import {
+  SessionState,
+  ReplyLog,
+  AnswerInSessionState,
+  Variable,
+} from '@typebot.io/schemas'
 
 import { omit } from '@typebot.io/lib'
 import got, { HTTPError, Method, OptionsInit } from 'got'
@@ -34,28 +39,16 @@ export const executeBlubotBlock = async (
   block: BlubotBlock
 ): Promise<ExecuteIntegrationResponse> => {
   const logs: ReplyLog[] = []
-  const blubot = {
-    id: "blubot1",
-    url: "https://blubot-api.onrender.com/service",
-    method: HttpMethod.POST,
-    body: {
-      teamId: "c0e82a8e-9c68-4fcb-a584-74314d8901b1",
-      forwardingId: "bff47419-de83-498b-94e6-37a5282b1ccf",
-      
-        // attendantId?: undefined
-    }
-}
-  //   block.options.blubot ??
-  //   ((await prisma.blubot.findUnique({
-  //     where: { id: block.blubotId },
-  //   })) as Blubot | null)
-  // if (!blubot) {
-  //   logs.push({
-  //     status: 'error',
-  //     description: `Couldn't find blubot with id ${block.blubotId}`,
-  //   })
-  //   return { outgoingEdgeId: block.outgoingEdgeId, logs }
-  // }
+  const blubot = block.options.blubot ? (block.options.blubot as Blubot) : null
+
+  if (!blubot) {
+    logs.push({
+      status: 'error',
+      description: `Couldn't find blubot with id ${block.blubotId}`,
+    })
+    return { outgoingEdgeId: block.outgoingEdgeId, logs }
+  }
+
   const preparedBlubot = prepareBlubotAttributes(blubot)
   const parsedBlubot = await parseBlubotAttributes(
     state,
@@ -78,9 +71,7 @@ export const executeBlubotBlock = async (
   })
 }
 
-const prepareBlubotAttributes = (
-  blubot: Blubot,
-): Blubot => {
+const prepareBlubotAttributes = (blubot: Blubot): Blubot => {
   return blubot
 }
 
@@ -91,7 +82,7 @@ const parseBlubotAttributes =
   async (blubot: Blubot): Promise<ParsedBlubot | undefined> => {
     if (!blubot.url || !blubot.method) return
     const { typebot } = state.typebotsQueue[0]
-    
+
     const bodyContent = await getBodyContent({
       body: JSON.stringify(blubot.body),
       answers,
@@ -107,9 +98,7 @@ const parseBlubotAttributes =
         : { data: undefined, isJson: false }
 
     return {
-      url: parseVariables(typebot.variables)(
-        blubot.url
-      ),
+      url: parseVariables(typebot.variables)(blubot.url),
       method: blubot.method,
       body,
       isJson,
@@ -120,7 +109,7 @@ export const executeBlubot = async (
   blubot: ParsedBlubot
 ): Promise<{ response: BlubotResponse; logs?: ReplyLog[] }> => {
   const logs: ReplyLog[] = []
-  const {  url, method,  body, isJson } = blubot
+  const { url, method, body, isJson } = blubot
   const contentType = 'application/json'
 
   const request = {
@@ -171,7 +160,7 @@ export const executeBlubot = async (
     }
     const response = {
       statusCode: 500,
-      data: { message: `Error from Typebot server: ${error}`, protocol: "" },
+      data: { message: `Error from Typebot server: ${error}`, protocol: '' },
     }
 
     console.error(error)
